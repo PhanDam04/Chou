@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="vi" translate="no" class="notranslate">
+<head>
+  <meta charset="UTF-8">
+  <meta name="google" content="notranslate">
+  <meta name="robots" content="notranslate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đêm Hội Đèn Trời - Rằng Em Mãi Ở Bên</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    * {
+      font-family: 'Quicksand', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-heritage {
+      font-family: 'Playfair Display', serif;
+    }
+    .font-title {
+      font-family: 'Cinzel', serif;
+    }
+
+    /* Khung viền vàng truyền thống */
+    .golden-box {
+      border: 2px solid rgba(245, 197, 85, 0.85);
+      box-shadow: 0 0 35px rgba(234, 179, 8, 0.25), inset 0 0 20px rgba(245, 158, 11, 0.15);
+      position: relative;
+    }
+    .golden-box::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 1px solid rgba(245, 197, 85, 0.4);
+      pointer-events: none;
+    }
+    
+    /* Vầng trăng rằm lung linh */
+    .moon-disk {
+      background: radial-gradient(circle at 40% 40%, #ffffff 0%, #fff7cc 45%, #ffd666 85%, #e6a817 100%);
+      box-shadow: 0 0 40px rgba(255, 255, 240, 0.9), 0 0 100px rgba(254, 240, 138, 0.6), 0 0 180px rgba(245, 158, 11, 0.35);
+      animation: moonFloat 8s ease-in-out infinite;
+    }
+    @keyframes moonFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .lantern-dialog-enter {
+      opacity: 0;
+      transform: scale(0.85) translateY(20px);
+      transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .lantern-dialog-active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    canvas#lanternCanvas {
+      cursor: pointer;
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(245, 158, 11, 0.4);
+      border-radius: 9999px;
+    }
+
+    .typing-cursor::after {
+      content: '|';
+      color: #f59e0b;
+      animation: blink 0.8s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    @keyframes pulseHint {
+      0%, 100% { opacity: 0.95; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.96); }
+    }
+    .pulse-hint {
+      animation: pulseHint 2.2s infinite ease-in-out;
+    }
+
+    @keyframes bounceBtn {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+    .btn-yes-pulse {
+      animation: bounceBtn 0.9s infinite ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-[#060814] text-amber-50 overflow-hidden relative selection:bg-amber-400 selection:text-slate-950">
+
+  <!-- Trình phát YouTube chạy ngầm ẩn bài "Rằng Em Mãi Ở Bên" -->
+  <div class="fixed -top-[9999px] -left-[9999px] opacity-0 pointer-events-none">
+    <div id="youtubePlayer"></div>
+  </div>
+
+  <!-- Interactive Night Sky Canvas -->
+  <canvas id="lanternCanvas" class="fixed inset-0 w-full h-full z-0 block"></canvas>
+
+  <!-- Deep Night Vignette Gradient Overlay -->
+  <div class="fixed inset-0 pointer-events-none z-0 bg-radial-at-c from-transparent via-[#060814]/50 to-[#02040b]"></div>
+
+  <!-- TOP HEADER BADGE -->
+  <div class="fixed top-5 left-1/2 -translate-x-1/2 z-20 pointer-events-none text-center">
+    <div class="inline-block px-6 py-2 rounded-xl bg-[#090d1f]/80 border border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.3)] backdrop-blur-md">
+      <h1 class="font-title text-sm sm:text-base tracking-[0.22em] font-bold text-amber-200">
+        ĐÊM HỘI ĐÈN TRỜI TRUNG THU
+      </h1>
+    </div>
+    <p id="subHintText" class="pulse-hint text-[12px] sm:text-sm tracking-wider font-semibold text-amber-200/90 mt-2.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+      CHẠM ĐỂ THẮP SÁNG & KHÁM PHÁ BÍ MẬT 🎶
+    </p>
+  </div>
+
+  <!-- VẦNG TRĂNG RẰM SÁNG RỰC GÓC TRỜI -->
+  <div class="fixed top-8 sm:top-12 right-6 sm:right-16 z-10 pointer-events-none">
+    <div class="moon-disk relative w-24 h-24 sm:w-36 sm:h-36 rounded-full flex items-center justify-center overflow-hidden">
+      <div class="absolute w-8 h-8 rounded-full bg-amber-200/25 blur-sm top-3 left-4"></div>
+      <div class="absolute w-12 h-12 rounded-full bg-amber-300/20 blur-md bottom-4 right-5"></div>
+      <div class="absolute w-6 h-6 rounded-full bg-amber-300/30 blur-xs top-8 right-6"></div>
+      <svg class="w-16 h-16 sm:w-24 sm:h-24 text-amber-950/20 -rotate-12 translate-x-1 translate-y-1" viewBox="0 0 100 100" fill="currentColor">
+        <path d="M50 18 C40 10 28 20 26 32 C24 44 35 50 48 50 C58 50 63 38 68 28 C72 20 60 14 50 18 Z" />
+        <circle cx="62" cy="24" r="5" />
+        <path d="M30 40 Q8 45 16 65 Q25 80 4 92" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3" />
+      </svg>
+    </div>
+  </div>
+
+  <!-- 1. POPUP LỒNG ĐÈN THƯỜNG -->
+  <div id="wishModal" class="fixed inset-0 z-40 bg-black/75 backdrop-blur-xs hidden flex items-center justify-center p-3 sm:p-4">
+    <div id="wishModalBox" class="lantern-dialog-enter golden-box w-full max-w-lg bg-[#0a0f26]/95 rounded-2xl p-5 sm:p-6 backdrop-blur-md max-h-[90vh] flex flex-col custom-scroll overflow-y-auto">
+      
+      <button id="btnCloseWish" class="absolute top-3 right-3 w-8 h-8 rounded-full border border-amber-400/80 bg-slate-950/70 hover:bg-amber-500 hover:text-slate-950 text-amber-300 flex items-center justify-center text-sm font-bold transition shadow-lg z-10">
+        ✕
+      </button>
+
+      <div class="text-center pt-1 pb-2 border-b border-amber-400/25 px-2 shrink-0">
+        <h2 id="modalMainWish" translate="no" class="notranslate font-heritage text-lg sm:text-2xl font-bold text-amber-100 leading-snug tracking-wide drop-shadow-[0_2px_12px_rgba(245,158,11,0.5)]">
+          Chúc bạn Trung Thu ấm áp!
+        </h2>
+      </div>
+
+      <div class="mt-2 text-center shrink-0">
+        <p id="modalSenderWish" translate="no" class="notranslate typing-cursor font-heritage text-base sm:text-lg text-amber-200 font-semibold leading-relaxed min-h-[1.75rem]">
+        </p>
+        <span id="modalSenderRole" class="text-[11px] sm:text-xs text-amber-400/70 mt-0.5 block">
+          🏮 Đèn Trời May Mắn Số #<span id="modalLanternId">88</span>
+        </span>
+      </div>
+
+      <div class="mt-3 flex flex-col items-center justify-center grow">
+        <div class="relative w-full max-w-md rounded-xl p-1 bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+          <div class="relative w-full bg-slate-950/80 rounded-lg overflow-hidden flex items-center justify-center">
+            <img id="modalAvatar" src="" alt="Wish image" 
+                 class="w-full max-h-56 sm:max-h-64 object-contain rounded-lg transition duration-200 hover:scale-[1.01] cursor-pointer"
+                 title="Bấm vào để xem ảnh lớn hơn"
+                 onerror="this.src='https://placehold.co/400x300/1e293b/f59e0b?text=❤️';">
+            <div class="absolute bottom-1 right-2 text-xs bg-black/60 px-2 py-0.5 rounded text-amber-200 pointer-events-none">
+              🔍 Bấm ảnh để phóng to
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3 pt-2 text-center border-t border-amber-400/20 text-xs text-amber-200/50 shrink-0">
+        Chạm ra ngoài để đóng
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 2. POPUP PHONG THƯ CÂU HỎI: "toi đẹp chai chứ" -->
+  <div id="letterQuestionModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div id="letterBox" class="golden-box w-full max-w-md bg-gradient-to-b from-[#181135] to-[#0a0718] rounded-3xl p-6 sm:p-8 text-center shadow-[0_0_50px_rgba(244,63,94,0.35)] relative overflow-hidden">
+      
+      <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-rose-500/20 border border-rose-400/50 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(244,63,94,0.6)]">
+        💌
+      </div>
+
+      <span class="text-xs uppercase tracking-widest text-rose-300 font-bold">Thử thách mở khóa mật thư</span>
+      
+      <h3 class="font-heritage text-2xl sm:text-3xl font-extrabold text-amber-100 mt-3 mb-2 leading-snug tracking-wide">
+        "toi đẹp chai chứ"
+      </h3>
+      
+      <p class="text-amber-200/70 text-xs sm:text-sm mb-4">
+        Trả lời thật lòng nha, không được dối lòng đâu đó 🥺
+      </p>
+
+      <p id="trollWarning" class="text-rose-400 text-xs sm:text-sm font-bold min-h-[1.5rem] transition-all"></p>
+
+      <div id="actionArea" class="mt-4 flex items-center justify-center gap-4 relative min-h-[80px]">
+        <button id="btnYes" class="px-7 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 hover:from-emerald-400 hover:to-green-400 text-slate-950 font-black text-base shadow-xl transition-all duration-200 transform origin-center flex items-center justify-center gap-2 z-20 cursor-pointer">
+          <span>💖</span> <span>Cóooo</span>
+        </button>
+
+        <button id="btnNo" class="px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm border border-slate-600 transition-all duration-200 z-10 cursor-pointer">
+          Không nhé 👎
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3. POPUP PHẦN THƯỞNG: BỨC THƯ CUỐI CÙNG (GỌN GÀNG, KHÔNG TRÀN, TỰ ĐỘNG RESET) -->
+  <div id="finalRewardModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-lg hidden flex items-center justify-center p-3 sm:p-4">
+    <div id="finalModalBox" class="golden-box w-full max-w-md bg-[#0e0a1f] rounded-3xl p-5 sm:p-6 text-center relative max-h-[90vh] flex flex-col justify-between custom-scroll overflow-y-auto">
+      
+      <!-- Nút Đóng 'X' -> Tự động Reset toàn bộ web -->
+      <button id="btnCloseFinal" class="absolute top-3 right-3 w-8 h-8 rounded-full border border-amber-400/80 bg-slate-950/70 hover:bg-amber-500 hover:text-slate-950 text-amber-300 flex items-center justify-center text-sm font-bold transition shadow-lg z-10" title="Đóng và chơi lại từ đầu">
+        ✕
+      </button>
+
+      <!-- Tiêu đề -->
+      <div class="text-center pt-1 pb-2 shrink-0">
+        <div class="text-2xl mb-1">🎉💖✨💖🎉</div>
+        <h2 class="font-heritage text-lg sm:text-xl font-bold text-rose-300 leading-snug">
+          Biết ngay là có mà lị!
+        </h2>
+        <span class="text-[11px] text-amber-400/80">Khen thật lòng hay bị ép thì cũng nhận hết nhó 😆</span>
+      </div>
+
+      <!-- Ảnh bức thư cuối: Đã cân chỉnh kích thước không bị tràn -->
+      <div class="my-2 flex justify-center shrink-0">
+        <div class="relative w-full max-w-[260px] sm:max-w-[280px] rounded-2xl p-1.5 bg-gradient-to-tr from-rose-500 via-amber-400 to-yellow-300 shadow-[0_0_25px_rgba(244,63,94,0.35)]">
+          <img id="finalImg" 
+               src="1790166846638_541447679351230496_8275916756494761850_4d76914b03f5decdd1d6ea019c1ecc71.jpg" 
+               alt="Bức ảnh đặc biệt" 
+               class="w-full max-h-48 sm:max-h-56 object-contain rounded-xl bg-slate-950 block mx-auto" 
+               onerror="this.src='https://placehold.co/400x300/1e293b/f59e0b?text=❤️';">
+        </div>
+      </div>
+
+      <!-- Nội dung bức thư cuối -->
+      <div class="mt-2 p-3 sm:p-4 rounded-xl bg-amber-500/10 border border-amber-400/30 text-left shrink-0">
+        <p id="finalLetterText" class="font-heritage text-xs sm:text-sm leading-relaxed text-amber-100">
+          "Gửi Chou nghen,<br><br>
+          Cảm ơn vì đã kiên nhẫn mở hết các lồng đèn và bấm chọn có nha .<br>
+          Mi đã chọn đúng đáp án rồi đó Yá húuuuuu ✨❤️"
+        </p>
+      </div>
+
+      <!-- Dòng hướng dẫn nhẹ nhàng -->
+      <div class="mt-3 text-[11px] text-amber-200/50 shrink-0">
+        Chạm ngoài hoặc bấm ✕ để kết thúc và chơi lại từ đầu
+      </div>
+
+    </div>
+  </div>
+
+  <!-- POPUP PHÓNG TO ẢNH (FULLSCREEN LIGHTBOX) -->
+  <div id="lightboxModal" class="fixed inset-0 z-50 bg-black/90 hidden flex items-center justify-center p-2 cursor-pointer">
+    <button class="absolute top-4 right-4 text-white text-3xl font-bold bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&times;</button>
+    <img id="lightboxImg" src="" class="max-w-[95vw] max-h-[92vh] object-contain rounded-lg border-2 border-amber-400/60 shadow-2xl">
+  </div>
+
+  <!-- THANH ĐIỀU KHIỂN DƯỚI CÙNG (DÒNG GỢI Ý ĐÃ ĐƯỢC LÀM TO & RÕ NỔI BẬT) -->
+  <div class="fixed bottom-4 inset-x-0 z-20 px-3 sm:px-8 flex items-center justify-between pointer-events-none">
+    
+    <!-- Âm nhạc -->
+    <div class="pointer-events-auto flex items-center gap-2">
+      <button id="btnMusicToggle" class="golden-box flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#0a0f26]/85 hover:bg-[#12193b] backdrop-blur-md text-amber-200 text-xs font-bold transition active:scale-95 cursor-pointer shadow-lg" title="Bật/Tắt Nhạc Nền">
+        <span class="text-base sm:text-lg">🎵</span>
+        <div id="switchPill" class="w-8 h-4 bg-amber-500 rounded-full relative p-0.5 transition-colors border border-amber-400/40">
+          <div id="switchCircle" class="w-3 h-3 bg-amber-400 rounded-full transition-transform transform translate-x-4"></div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Bộ đếm & Gợi ý to rõ ràng ở chính giữa -->
+    <div class="text-center pointer-events-none px-2">
+      <div class="inline-block px-4 py-1.5 rounded-full bg-[#0a0f26]/85 border border-amber-400/50 backdrop-blur-md shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+        <div class="text-[12px] sm:text-sm tracking-wider font-extrabold text-amber-200 uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+          ĐÃ KHÁM PHÁ: <span id="counterText" class="text-amber-300 text-sm sm:text-base font-black">0/5</span>
+        </div>
+        <span id="targetGoalHint" class="text-[12px] sm:text-sm text-rose-300 font-bold block tracking-wide drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]">
+          💌 THẮP SÁNG ĐỦ 5 ĐÈN ĐỂ MỞ MẬT THƯ BÍ MẬT 💌
+        </span>
+      </div>
+    </div>
+
+    <div class="w-12 sm:w-24"></div>
+
+  </div>
+
+  <!-- Nạp API YouTube IFrame -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    /* ============================================================
+     * DANH SÁCH 5 LỜI CHÚC & ẢNH CHUẨN THEO THỨ TỰ
+     * ============================================================ */
+    const WISH_COLLECTION = [
+      {
+        main: "Chúc bạn Trung Thu lạnh lẽo bên trời mưa",
+        sender: "Đảm ke chúc Tưởng Cô Niêu bớt láo lại nhá",
+        avatar: "1790152488503_541447679351230496_8275916756494761850_e694d21dc8d6e064667649fbf52e31a0.jpg"
+      },
+      {
+        main: "Quỷ Nhỏ",
+        sender: "Láo láo có ngày anh m quánh vô cái mỏ",
+        avatar: "1790164056885_541447679351230496_8275916756494761850_0a85c6253a9999ce886407ca637f14a9.jpg"
+      },
+      {
+        main: "Chou mini",
+        sender: "Ai mà thấy cưng thế nhờ",
+        avatar: "1790164145586_541447679351230496_8275916756494761850_16de3eb261ee31812f0d755710bbeb56.jpg"
+      },
+      {
+        main: "Chou bự",
+        sender: "Này nhìn thì cũng được",
+        avatar: "1790164137076_541447679351230496_8275916756494761850_1f9715df1a8abe52eaa9bdc01e3f5875.jpg"
+      },
+      {
+        main: "Yá húuuuuu",
+        sender: "hú hú",
+        avatar: "1790163387993_541447679351230496_8275916756494761850_f802ddbd46eab36ed6dcd7b39d79174a.jpg"
+      }
+    ];
+
+    /* ============================================================
+     * ÂM THANH BÀI HÁT
+     * ============================================================ */
+    let ytPlayer = null;
+    let isMusicActive = true;
+    let hasInteracted = false;
+    const YT_VIDEO_ID = "RurxOHMxxPM";
+
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player('youtubePlayer', {
+        height: '10',
+        width: '10',
+        videoId: YT_VIDEO_ID,
+        playerVars: {
+          autoplay: 0,
+          loop: 1,
+          playlist: YT_VIDEO_ID,
+          controls: 0,
+          showinfo: 0,
+          modestbranding: 1
+        },
+        events: {
+          onReady: (event) => {
+            event.target.setVolume(85);
+            if (hasInteracted) event.target.playVideo();
+          }
+        }
+      });
+    }
+
+    function playVocalSong() {
+      if (ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo();
+    }
+
+    function toggleMusic() {
+      const circle = document.getElementById('switchCircle');
+      const pill = document.getElementById('switchPill');
+      isMusicActive = !isMusicActive;
+
+      if (isMusicActive) {
+        circle.classList.replace('translate-x-0', 'translate-x-4');
+        pill.classList.replace('bg-slate-800', 'bg-amber-500');
+        if (ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo();
+      } else {
+        circle.classList.replace('translate-x-4', 'translate-x-0');
+        pill.classList.replace('bg-amber-500', 'bg-slate-800');
+        if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+      }
+    }
+    document.getElementById('btnMusicToggle').addEventListener('click', toggleMusic);
+
+    function autoStartOnFirstTouch() {
+      if (!hasInteracted) {
+        hasInteracted = true;
+        playVocalSong();
+        const hint = document.getElementById('subHintText');
+        if (hint) {
+          hint.innerText = "CHỌN 5 LỒNG ĐÈN ĐỂ KHÁM PHÁ MẬT THƯ ✨";
+          hint.classList.remove('pulse-hint');
+        }
+      }
+    }
+    window.addEventListener('click', autoStartOnFirstTouch, { once: true });
+    window.addEventListener('touchstart', autoStartOnFirstTouch, { once: true });
+
+    /* ============================================================
+     * HIỆU ỨNG CANVAS
+     * ============================================================ */
+    const canvas = document.getElementById('lanternCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = 0, height = 0;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const stars = [];
+    for (let i = 0; i < 130; i++) {
+      stars.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight * 0.8,
+        radius: Math.random() * 1.4 + 0.3,
+        alpha: Math.random(),
+        speed: Math.random() * 0.02 + 0.005
+      });
+    }
+
+    const shootingStars = [];
+    function spawnShootingStar() {
+      shootingStars.push({
+        x: Math.random() * width * 0.7 + width * 0.1,
+        y: Math.random() * height * 0.3,
+        length: Math.random() * 90 + 70,
+        speed: Math.random() * 10 + 12,
+        angle: Math.PI / 4 + (Math.random() - 0.5) * 0.2,
+        alpha: 1,
+        decay: 0.015
+      });
+      setTimeout(spawnShootingStar, Math.random() * 7000 + 5000);
+    }
+    setTimeout(spawnShootingStar, 3000);
+
+    const TOTAL_LANTERNS = 200;
+    const lanterns = [];
+    
+    // BIẾN CƠ CẤU: Số lần bấm đèn (0 -> 5)
+    let clickCount = 0;
+    let windForce = 0;
+    let hasUnlockedLetter = false;
+
+    function createLantern(id, randomY = true) {
+      const depth = Math.random();
+      const w = 8 + depth * 18;
+      const h = w * 1.35;
+      const isHeart = (id === 88);
+      
+      return {
+        id: id,
+        x: Math.random() * width,
+        y: randomY ? Math.random() * (height + 200) : height + Math.random() * 50 + 20,
+        w: isHeart ? 26 : w,
+        h: isHeart ? 26 : h,
+        depth: isHeart ? 0.95 : depth,
+        isHeart: isHeart,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: isHeart ? -0.55 : -(0.35 + depth * 0.8),
+        swayOffset: Math.random() * Math.PI * 2
+      };
+    }
+
+    for (let i = 1; i <= TOTAL_LANTERNS; i++) {
+      lanterns.push(createLantern(i, true));
+    }
+
+    const particles = [];
+    function addFirework(x, y, count = 45, customColor = null) {
+      const colors = customColor ? [customColor, '#ffffff', '#ffd666'] : ['#f59e0b', '#fbbf24', '#ef4444', '#f43f5e', '#38bdf8', '#ffffff'];
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.3;
+        const spd = Math.random() * 5.5 + 2.0;
+        particles.push({
+          x: x, y: y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: Math.random() * 0.02 + 0.015
+        });
+      }
+    }
+
+    function triggerLanternConfetti(x, y, count = 50) {
+      const normX = x / window.innerWidth;
+      const normY = y / window.innerHeight;
+      confetti({
+        particleCount: count,
+        spread: 80,
+        startVelocity: 35,
+        origin: { x: normX, y: normY },
+        colors: ['#f59e0b', '#fbbf24', '#ef4444', '#f43f5e', '#ffffff', '#38bdf8', '#ec4899']
+      });
+    }
+
+    function drawHeart(c, x, y, size) {
+      c.save();
+      c.translate(x, y);
+      c.beginPath();
+      const topCurveHeight = size * 0.3;
+      c.moveTo(0, topCurveHeight);
+      c.bezierCurveTo(0, 0, -size / 2, 0, -size / 2, topCurveHeight);
+      c.bezierCurveTo(-size / 2, (size + topCurveHeight) / 2, 0, size, 0, size * 1.15);
+      c.bezierCurveTo(0, size, size / 2, (size + topCurveHeight) / 2, size / 2, topCurveHeight);
+      c.bezierCurveTo(size / 2, 0, 0, 0, 0, topCurveHeight);
+      c.closePath();
+      c.fill();
+      c.restore();
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Sao
+      for (let s of stars) {
+        s.alpha += s.speed;
+        const a = Math.abs(Math.sin(s.alpha));
+        ctx.fillStyle = `rgba(254, 240, 138, ${a * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Sao băng
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const ss = shootingStars[i];
+        ss.x += Math.cos(ss.angle) * ss.speed;
+        ss.y += Math.sin(ss.angle) * ss.speed;
+        ss.alpha -= ss.decay;
+        if (ss.alpha <= 0) {
+          shootingStars.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.strokeStyle = `rgba(255, 255, 255, ${ss.alpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(ss.x, ss.y);
+        ctx.lineTo(
+          ss.x - Math.cos(ss.angle) * ss.length,
+          ss.y - Math.sin(ss.angle) * ss.length
+        );
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      windForce *= 0.94;
+      lanterns.sort((a, b) => a.depth - b.depth);
+
+      for (let l of lanterns) {
+        l.y += l.vy;
+        l.x += l.vx + Math.sin(l.y * 0.008 + l.swayOffset) * 0.4 + windForce * (l.depth + 0.3);
+
+        if (l.y < -60) {
+          l.y = height + 40;
+          l.x = Math.random() * width;
+        }
+
+        const glowRadius = l.w * (l.isHeart ? 2.8 : 2.2);
+        const radialGlow = ctx.createRadialGradient(l.x, l.y, 2, l.x, l.y, glowRadius);
+        if (l.isHeart) {
+          radialGlow.addColorStop(0, 'rgba(244, 63, 94, 0.85)');
+          radialGlow.addColorStop(0.5, 'rgba(236, 72, 153, 0.3)');
+          radialGlow.addColorStop(1, 'rgba(244, 63, 94, 0)');
+        } else {
+          radialGlow.addColorStop(0, 'rgba(251, 146, 60, 0.65)');
+          radialGlow.addColorStop(0.5, 'rgba(234, 88, 12, 0.25)');
+          radialGlow.addColorStop(1, 'rgba(234, 88, 12, 0)');
+        }
+
+        ctx.fillStyle = radialGlow;
+        ctx.beginPath();
+        ctx.arc(l.x, l.y, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (l.isHeart) {
+          ctx.fillStyle = '#f43f5e';
+          drawHeart(ctx, l.x, l.y - l.h * 0.5, l.w);
+        } else {
+          ctx.save();
+          ctx.translate(l.x, l.y);
+          const bodyGrad = ctx.createLinearGradient(-l.w / 2, -l.h / 2, l.w / 2, l.h / 2);
+          bodyGrad.addColorStop(0, '#fde68a');
+          bodyGrad.addColorStop(0.4, '#f59e0b');
+          bodyGrad.addColorStop(1, '#ea580c');
+          ctx.fillStyle = bodyGrad;
+          ctx.beginPath();
+          ctx.roundRect(-l.w / 2, -l.h / 2, l.w, l.h, l.w * 0.25);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(0, l.h * 0.28, l.w * 0.18, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(0, l.h * 0.28, l.w * 0.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.06;
+        p.alpha -= p.decay;
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    /* ============================================================
+     * HIỆU ỨNG GÕ CHỮ TỪNG NÉT
+     * ============================================================ */
+    let typingTimer = null;
+    function typeWriterEffect(element, text, speed = 35) {
+      if (typingTimer) clearInterval(typingTimer);
+      element.textContent = "";
+      element.classList.add('typing-cursor');
+      let index = 0;
+      typingTimer = setInterval(() => {
+        if (index < text.length) {
+          element.textContent += text.charAt(index);
+          index++;
+        } else {
+          clearInterval(typingTimer);
+          element.classList.remove('typing-cursor');
+        }
+      }, speed);
+    }
+
+    /* ============================================================
+     * TƯƠNG TÁC LỒNG ĐÈN: CƠ CẤU TUẦN TỰ 5 LẦN BẤM
+     * ============================================================ */
+    const wishModal = document.getElementById('wishModal');
+    const wishModalBox = document.getElementById('wishModalBox');
+    const letterQuestionModal = document.getElementById('letterQuestionModal');
+
+    function openWish(lanternId, clickX, clickY, isHeart = false) {
+      if (isHeart) {
+        addFirework(clickX, clickY, 80, '#f43f5e');
+        triggerLanternConfetti(clickX, clickY, 120);
+      } else {
+        addFirework(clickX, clickY, 55);
+        triggerLanternConfetti(clickX, clickY, 50);
+      }
+
+      const currentWishIndex = Math.min(clickCount, WISH_COLLECTION.length - 1);
+      const wishItem = WISH_COLLECTION[currentWishIndex];
+
+      if (clickCount < 5) {
+        clickCount++;
+        document.getElementById('counterText').innerText = `${clickCount}/5`;
+      }
+
+      document.getElementById('modalMainWish').textContent = `"${wishItem.main}"`;
+      document.getElementById('modalLanternId').textContent = isHeart ? "88 (Định Mệnh ❤️)" : lanternId;
+      
+      const avatarEl = document.getElementById('modalAvatar');
+      if (wishItem.avatar && wishItem.avatar.trim() !== '') {
+        avatarEl.src = wishItem.avatar;
+      } else {
+        avatarEl.src = 'https://placehold.co/400x300/1e293b/f59e0b?text=❤️';
+      }
+
+      setTimeout(() => {
+        wishModal.classList.remove('hidden');
+        setTimeout(() => {
+          wishModalBox.classList.add('lantern-dialog-active');
+          const senderEl = document.getElementById('modalSenderWish');
+          typeWriterEffect(senderEl, wishItem.sender);
+        }, 15);
+      }, 150);
+    }
+
+    function closeWish() {
+      if (typingTimer) clearInterval(typingTimer);
+      wishModalBox.classList.remove('lantern-dialog-active');
+      setTimeout(() => {
+        wishModal.classList.add('hidden');
+
+        // Bấm đủ 5 lần đóng lại -> BUNG NGAY PHONG THƯ CÂU HỎI!
+        if (clickCount >= 5 && !hasUnlockedLetter) {
+          hasUnlockedLetter = true;
+          document.getElementById('targetGoalHint').innerText = "💌 ĐÃ MỞ KHÓA MẬT THƯ ĐẶC BIỆT 💌";
+          setTimeout(showLetterQuestion, 500);
+        }
+      }, 250);
+    }
+
+    document.getElementById('btnCloseWish').addEventListener('click', closeWish);
+    wishModal.addEventListener('click', (e) => {
+      if (e.target === wishModal) closeWish();
+    });
+
+    const lightboxModal = document.getElementById('lightboxModal');
+    const lightboxImg = document.getElementById('lightboxImg');
+    document.getElementById('modalAvatar').addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxImg.src = document.getElementById('modalAvatar').src;
+      lightboxModal.classList.remove('hidden');
+    });
+    lightboxModal.addEventListener('click', () => {
+      lightboxModal.classList.add('hidden');
+    });
+
+    /* ============================================================
+     * LOGIC CÂU HỎI TROLL: "toi đẹp chai chứ"
+     * ============================================================ */
+    const btnYes = document.getElementById('btnYes');
+    const btnNo = document.getElementById('btnNo');
+    const trollWarning = document.getElementById('trollWarning');
+    const finalRewardModal = document.getElementById('finalRewardModal');
+
+    let yesScale = 1;
+    let noClickCount = 0;
+    const trollMessages = [
+      "Ủa alo bấm nhầm nút đúng hông? Bấm lại đii 😜",
+      "Nút đó bị hư rồi má ôi, đừng cố chấp nữa!",
+      "Nè nè, suy nghĩ cho kỹ trước khi bấm tiếp nha! 😤",
+      "Mắt mũi để đâu dị, nút CÓ to đùng bên cạnh kìa!",
+      "Không có sự lựa chọn khác đâu, ngoan bấm CÓ đi nè! ❤️"
+    ];
+
+    function showLetterQuestion() {
+      letterQuestionModal.classList.remove('hidden');
+      confetti({
+        particleCount: 80,
+        spread: 100,
+        origin: { y: 0.5 }
+      });
+    }
+
+    function handleNoReaction() {
+      noClickCount++;
+      yesScale += 0.35;
+      btnYes.style.transform = `scale(${yesScale})`;
+      btnYes.classList.add('btn-yes-pulse');
+
+      const currentNoScale = Math.max(1 - noClickCount * 0.15, 0.45);
+      const randomOffsetX = (Math.random() - 0.5) * 90;
+      const randomOffsetY = (Math.random() - 0.5) * 45;
+      btnNo.style.transform = `translate(${randomOffsetX}px, ${randomOffsetY}px) scale(${currentNoScale})`;
+
+      const msg = trollMessages[(noClickCount - 1) % trollMessages.length];
+      trollWarning.innerText = msg;
+    }
+
+    btnNo.addEventListener('click', handleNoReaction);
+    btnNo.addEventListener('mouseenter', () => {
+      if (noClickCount >= 2) handleNoReaction();
+    });
+
+    btnYes.addEventListener('click', () => {
+      letterQuestionModal.classList.add('hidden');
+      
+      const end = Date.now() + 2500;
+      const interval = setInterval(function() {
+        if (Date.now() > end) return clearInterval(interval);
+        confetti({
+          startVelocity: 30,
+          spread: 360,
+          ticks: 60,
+          origin: { x: Math.random(), y: Math.random() - 0.2 },
+          colors: ['#f43f5e', '#f59e0b', '#10b981', '#60a5fa', '#ffffff']
+        });
+      }, 200);
+
+      setTimeout(() => {
+        finalRewardModal.classList.remove('hidden');
+      }, 500);
+    });
+
+    /* ============================================================
+     * HÀM RESET TỰ ĐỘNG
+     * ============================================================ */
+    function resetExperience() {
+      finalRewardModal.classList.add('hidden');
+      letterQuestionModal.classList.add('hidden');
+      wishModal.classList.add('hidden');
+
+      clickCount = 0;
+      hasUnlockedLetter = false;
+      noClickCount = 0;
+      yesScale = 1;
+
+      btnYes.style.transform = 'scale(1)';
+      btnYes.classList.remove('btn-yes-pulse');
+      btnNo.style.transform = 'translate(0px, 0px) scale(1)';
+      trollWarning.innerText = '';
+
+      document.getElementById('counterText').innerText = '0/5';
+      document.getElementById('targetGoalHint').innerText = '💌 THẮP SÁNG ĐỦ 5 ĐÈN ĐỂ MỞ MẬT THƯ BÍ MẬT 💌';
+
+      confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+    }
+
+    // Bấm nút [✕] đóng thư cuối -> Tự động Reset toàn bộ
+    document.getElementById('btnCloseFinal').addEventListener('click', resetExperience);
+
+    // Chạm ra ngoài nền tối của thư cuối -> Tự động Reset
+    finalRewardModal.addEventListener('click', (e) => {
+      if (e.target === finalRewardModal) resetExperience();
+    });
+
+    /* ============================================================
+     * BẮT SỰ KIỆN TƯƠNG TÁC
+     * ============================================================ */
+    let lastX = 0;
+    function handlePointer(clientX, clientY) {
+      for (let i = lanterns.length - 1; i >= 0; i--) {
+        const l = lanterns[i];
+        const hitRadius = Math.max(l.w * 1.6, 26);
+        const dx = clientX - l.x;
+        const dy = clientY - l.y;
+        if (dx * dx + dy * dy < hitRadius * hitRadius) {
+          openWish(l.id, clientX, clientY, l.isHeart);
+          return;
+        }
+      }
+      addFirework(clientX, clientY, 20);
+    }
+
+    window.addEventListener('mousemove', (e) => {
+      const deltaX = e.clientX - lastX;
+      windForce = Math.max(Math.min(deltaX * 0.08, 2.5), -2.5);
+      lastX = e.clientX;
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0]) {
+        const deltaX = e.touches[0].clientX - lastX;
+        windForce = Math.max(Math.min(deltaX * 0.1, 3), -3);
+        lastX = e.touches[0].clientX;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('click', (e) => handlePointer(e.clientX, e.clientY));
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches[0]) {
+        lastX = e.touches[0].clientX;
+        handlePointer(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+  </script>
+</body>
+</html>
